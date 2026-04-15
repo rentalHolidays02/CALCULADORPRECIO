@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador Tarifas Apartamentos</title>
+<style>
+:root {
+  --navy:#0D1B2A; --teal:#0F7A8C; --teal-l:#1DA8BF;
+  --orange:#E07530; --orange-l:#F59243;
+  --sand:#FFF9F2; --sand-d:#EDE0CF;
+  --gray:#6B7280; --light:#F3F4F6; --white:#FFFFFF;
+  --c-festivo:#FEE2E2; --b-festivo:#EF4444;
+  --c-festival:#EDE9FE; --b-festival:#8B5CF6;
+  --c-weekend:#DBEAFE; --b-weekend:#3B82F6;
+  --radius:8px; --shadow:0 2px 8px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef2f7;color:var(--navy);font-size:13px;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0D1B2A 0%,#163352 100%);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+.header-text h1{font-size:19px;font-weight:700;letter-spacing:-.3px;}
+.header-text p{font-size:11px;opacity:.65;margin-top:2px;}
+.header-right{display:flex;gap:10px;align-items:center;}
+.btn-gen{background:var(--orange);color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px;letter-spacing:-.2px;}
+.btn-gen:hover{background:#c4611e;transform:translateY(-1px);}
+.btn-secondary{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:9px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;}
+.btn-secondary:hover{background:rgba(255,255,255,.25);}
+
+/* TABS */
+.tabs{background:#fff;padding:0 24px;display:flex;gap:2px;border-bottom:2px solid #e5e7eb;position:sticky;top:61px;z-index:190;}
+.tab{background:none;border:none;padding:11px 18px;font-size:13px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.2s;}
+.tab:hover{color:var(--teal);}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+
+/* CONTENT */
+.tab-content{display:none;padding:20px 24px;}
+.tab-content.active{display:block;}
+
+/* SECTION TITLES */
+.section-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.badge{background:var(--teal);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.badge-orange{background:var(--orange);}
+.info-box{background:linear-gradient(135deg,#eff6ff,#e0f2fe);border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.5;}
+
+/* SEASON TABLE */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.tbl thead tr{background:linear-gradient(135deg,#0D1B2A,#1a3a5c);color:#fff;}
+.tbl th{padding:10px 12px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.tbl th:first-child{text-align:left;}
+.tbl td{padding:7px 10px;border-bottom:1px solid #f3f4f6;text-align:center;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#fafbfc;}
+.tbl td:first-child{text-align:left;font-weight:600;font-size:12px;white-space:nowrap;}
+.tbl input[type=number]{width:100%;border:1.5px solid #e5e7eb;border-radius:4px;padding:4px 6px;font-size:13px;color:var(--navy);text-align:center;transition:.15s;background:#fafbfc;}
+.tbl input[type=number]:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(15,122,140,.12);}
+.season-preview{font-size:11px;color:var(--gray);margin-top:2px;}
+
+/* CALENDAR */
+.calendar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.month-card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:.2s;}
+.month-hdr{background:linear-gradient(135deg,var(--navy),#1a3a5c);color:#fff;padding:9px 12px;font-size:13px;font-weight:700;text-align:center;display:flex;justify-content:space-between;align-items:center;}
+.month-hdr .count{font-size:10px;opacity:.7;font-weight:500;}
+.cal-inner{padding:8px;}
+.day-hdrs{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px;}
+.day-hdr-cell{text-align:center;font-size:10px;font-weight:700;color:#9ca3af;padding:3px 0;}
+.days-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.dc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:4px;cursor:pointer;user-select:none;font-weight:500;transition:all .12s;border:2px solid transparent;position:relative;}
+.dc:not(.empty):hover{transform:scale(1.2);z-index:5;}
+.dc.empty{cursor:default;}
+.dc.wd{background:#f9fafb;color:#374151;}
+.dc.we{background:var(--c-weekend);color:#1d4ed8;}
+.dc.fe{background:var(--c-festivo);color:#b91c1c;border-color:var(--b-festivo);font-weight:700;}
+.dc.fv{background:var(--c-festival);color:#6d28d9;border-color:var(--b-festival);font-weight:700;}
+
+.legend{display:flex;gap:14px;margin-bottom:14px;padding:10px 14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--gray);}
+.ldot{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+.hint{font-size:11px;color:var(--gray);margin-bottom:14px;background:#fff;padding:8px 14px;border-radius:6px;box-shadow:var(--shadow);}
+
+/* FESTIVAL SHORTCUTS */
+.festival-shortcuts{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:16px;}
+.fshort-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px;}
+.fshort-btn{border:1.5px solid #e5e7eb;background:#fafbfc;border-radius:6px;padding:8px 12px;cursor:pointer;text-align:left;font-size:12px;transition:.15s;}
+.fshort-btn:hover{border-color:var(--b-festival);background:var(--c-festival);}
+.fshort-btn strong{display:block;font-size:12px;color:var(--navy);}
+.fshort-btn span{font-size:11px;color:var(--gray);}
+.fshort-btn.active-f{border-color:var(--b-festival);background:var(--c-festival);}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.setting-card{background:#fff;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.setting-card label{display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;}
+.setting-card input{width:100%;border:2px solid #e5e7eb;border-radius:6px;padding:8px 12px;font-size:16px;font-weight:700;color:var(--navy);transition:.2s;}
+.setting-card input:focus{outline:none;border-color:var(--teal);}
+.setting-card .hint-text{font-size:11px;color:var(--gray);margin-top:5px;line-height:1.4;}
+
+.formula-box{background:#fff;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-top:16px;}
+.formula-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f3f4f6;}
+.formula-row:last-child{border-bottom:none;}
+.formula-tag{background:var(--light);border-radius:4px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap;}
+.formula-eq{font-size:12px;color:var(--gray);font-family:monospace;}
+
+/* PREVIEW TAB */
+.preview-month{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;}
+.preview-month-hdr{background:linear-gradient(135deg,var(--navy),#1a3a5c);color:#fff;padding:8px 14px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;}
+.ptbl{width:100%;border-collapse:collapse;}
+.ptbl th{background:#f8fafc;padding:6px 10px;font-size:11px;font-weight:700;text-align:center;color:var(--gray);border-bottom:1px solid #e5e7eb;}
+.ptbl td{padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #f9fafb;}
+.ptbl tr:last-child td{border-bottom:none;}
+.ptbl td.day-num{font-weight:700;color:var(--navy);}
+.ptbl td.day-let{color:var(--gray);}
+.ptbl td.is-festivo{background:var(--c-festivo);color:#b91c1c;font-weight:700;}
+.ptbl td.is-festival{background:var(--c-festival);color:#6d28d9;font-weight:700;}
+.ptbl td.is-we{color:#1d4ed8;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#0D1B2A;color:#fff;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);z-index:1000;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MODAL para importar/exportar festivos */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:24px;width:90%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:12px;}
+.modal textarea{width:100%;height:120px;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px;font-size:12px;font-family:monospace;resize:vertical;}
+.modal-btns{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+.btn-sm{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;}
+.btn-sm.primary{background:var(--teal);color:#fff;}
+.btn-sm.danger{background:#ef4444;color:#fff;}
+.btn-sm.secondary{background:#f3f4f6;color:var(--navy);}
+
+@media(max-width:600px){
+  .header{flex-wrap:wrap;gap:10px;}
+  .calendar-grid{grid-template-columns:1fr 1fr;}
+  .tabs{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-text">
+    <h1>🏖 Generador de Tarifas</h1>
+    <p>Apartamentos Vacaciones · Noviembre 2025 – Octubre 2026</p>
+  </div>
+  <div class="header-right">
+    <button class="btn-secondary" onclick="openModal()">📤 Exportar/Importar Festivos</button>
+    <button class="btn-secondary" onclick="showTab('preview', event)">👁 Vista Previa</button>
+    <button class="btn-gen" onclick="generateExcel()">📊 Descargar Excel</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('temporadas',event)">📋 Temporadas</button>
+  <button class="tab" onclick="showTab('festivos',event)">🗓 Festivos</button>
+  <button class="tab" onclick="showTab('ajustes',event)">⚙️ Ajustes</button>
+  <button class="tab" onclick="showTab('preview',event)">👁 Vista Previa</button>
+</div>
+
+<!-- ====== TAB TEMPORADAS ====== -->
+<div id="tab-temporadas" class="tab-content active">
+  <p class="section-title">Tabla de Temporadas <span class="badge">Editable</span></p>
+  <div class="info-box">
+    ✏️ Edita directamente los precios base (PP), factores multiplicadores y días mínimos. Los cambios se reflejan al generar el Excel.
+    <br>📌 <strong>Factor D-J</strong> = multiplicador para Domingo–Jueves &nbsp;|&nbsp; <strong>Factor V-S</strong> = multiplicador para Viernes–Sábado
+  </div>
+  <table class="tbl" id="seasons-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;min-width:180px">Temporada</th>
+        <th>PP Base (€/noche)</th>
+        <th>Factor D-J<br><small style="opacity:.7;font-weight:500">×PP</small></th>
+        <th>Factor V-S<br><small style="opacity:.7;font-weight:500">×PP</small></th>
+        <th>Días Mínimos</th>
+        <th>Ejemplo precio D-J</th>
+        <th>Ejemplo precio V-S</th>
+      </tr>
+    </thead>
+    <tbody id="seasons-tbody"></tbody>
+  </table>
+</div>
+
+<!-- ====== TAB FESTIVOS ====== -->
+<div id="tab-festivos" class="tab-content">
+  <div class="legend">
+    <div class="li"><span class="ldot" style="background:#f9fafb;border:1px solid #ccc"></span>Entre semana normal</div>
+    <div class="li"><span class="ldot" style="background:var(--c-weekend);border:1px solid var(--b-weekend)"></span>Fin de semana</div>
+    <div class="li"><span class="ldot" style="background:var(--c-festivo);border:1px solid var(--b-festivo)"></span>Festivo Nacional</div>
+    <div class="li"><span class="ldot" style="background:var(--c-festival);border:1px solid var(--b-festival)"></span>Festival / Concierto</div>
+  </div>
+  <div class="hint">💡 <strong>1 clic</strong> → Festivo Nacional &nbsp;·&nbsp; <strong>2 clics</strong> → Festival/Concierto &nbsp;·&nbsp; <strong>3 clics</strong> → Normal</div>
+
+  <div class="festival-shortcuts">
+    <div class="section-title" style="margin:0 0 6px 0">⚡ Marcar Periodos de Festival Rápido</div>
+    <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Haz clic para marcar/desmarcar el periodo completo como Festival</p>
+    <div class="fshort-grid" id="festival-shortcuts-grid"></div>
+  </div>
+
+  <div class="calendar-grid" id="calendar-container"></div>
+</div>
+
+<!-- ====== TAB AJUSTES ====== -->
+<div id="tab-ajustes" class="tab-content">
+  <p class="section-title">Parámetros de Cálculo</p>
+  <div class="settings-grid">
+    <div class="setting-card">
+      <label>Nº de Personas (referencia)</label>
+      <input type="number" id="numPersonas" value="6" min="1" max="20" onchange="renderSeasons()">
+      <p class="hint-text">Usado en la fórmula de festivos:<br><code>(personas × precio festivo) ÷ PP</code></p>
+    </div>
+    <div class="setting-card">
+      <label>Precio Festivo Nacional (€/persona)</label>
+      <input type="number" id="precioFestivo" value="45" min="1" onchange="renderSeasons()">
+      <p class="hint-text">Precio por persona para días festivos nacionales (ej. 1 Ene, 6 Ene, 1 May...)</p>
+    </div>
+    <div class="setting-card">
+      <label>Precio Festivales / Conciertos (€/persona)</label>
+      <input type="number" id="precioFestival" value="35" min="1" onchange="renderSeasons()">
+      <p class="hint-text">Precio por persona para días de festival (FIB, Arenal Sound, Rototom, Magdalena...)</p>
+    </div>
+    <div class="setting-card">
+      <label>Días Mínimos en Festivos</label>
+      <input type="number" id="minDiasFestivo" value="3" min="1" max="7">
+      <p class="hint-text">Mínimo de noches exigido en días festivos nacionales</p>
+    </div>
+    <div class="setting-card">
+      <label>Días Mínimos en Festivales</label>
+      <input type="number" id="minDiasFestival" value="2" min="1" max="7">
+      <p class="hint-text">Mínimo de noches exigido en días de festival/concierto</p>
+    </div>
+    <div class="setting-card">
+      <label>Año inicio del fichero</label>
+      <input type="number" id="yearStart" value="2025" min="2020" max="2030">
+      <p class="hint-text">Afecta al nombre del fichero Excel generado</p>
+    </div>
+  </div>
+
+  <div class="formula-box">
+    <p class="section-title" style="margin-bottom:12px">Fórmulas de Cálculo Aplicadas</p>
+    <div class="formula-row">
+      <span class="formula-tag" style="background:var(--c-festivo);color:#b91c1c">FESTIVO</span>
+      <span class="formula-eq">Multiplicador = (N.Personas × Precio_Festivo) ÷ PP_Temporada</span>
+    </div>
+    <div class="formula-row">
+      <span class="formula-tag" style="background:var(--c-festival);color:#6d28d9">FESTIVAL</span>
+      <span class="formula-eq">Multiplicador = (N.Personas × Precio_Festival) ÷ PP_Temporada</span>
+    </div>
+    <div class="formula-row">
+      <span class="formula-tag">D – J</span>
+      <span class="formula-eq">Multiplicador = Factor_DJ de la temporada vigente</span>
+    </div>
+    <div class="formula-row">
+      <span class="formula-tag" style="background:var(--c-weekend);color:#1d4ed8">V – S</span>
+      <span class="formula-eq">Multiplicador = Factor_VS de la temporada vigente</span>
+    </div>
+    <div class="formula-row" style="background:#f0fdf4;border-radius:4px;padding:8px 10px;border:1px solid #bbf7d0;margin-top:4px;">
+      <span class="formula-tag" style="background:#16a34a;color:#fff">PRECIO FINAL</span>
+      <span class="formula-eq">Precio_Final = PP_Temporada × Multiplicador</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== TAB PREVIEW ====== -->
+<div id="tab-preview" class="tab-content">
+  <div class="info-box">🔄 La vista previa calcula los precios en tiempo real con la configuración actual. Pulsa <strong>Descargar Excel</strong> para exportar.</div>
+  <div id="preview-container"></div>
+</div>
+
+<!-- MODAL EXPORT/IMPORT -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3>📤 Exportar / Importar Festivos</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px">Copia esta lista para guardar tus festivos, o pégala para restaurarlos.</p>
+    <textarea id="modal-textarea" placeholder="2025-11-01&#10;2025-12-06&#10;..."></textarea>
+    <div style="font-size:11px;color:var(--gray);margin-top:6px">Formato: una fecha por línea (AAAA-MM-DD). Las marcadas con <code>*</code> son festivales.</div>
+    <div class="modal-btns">
+      <button class="btn-sm secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-sm primary" onclick="exportHolidays()">Exportar</button>
+      <button class="btn-sm danger" onclick="importHolidays()">Importar (sobreescribir)</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ============================================================
+//  DATOS DE MESES Y TEMPORADAS
+// ============================================================
+const MONTHS = [
+  {name:'Noviembre', year:2025, month:10, colStart:0},
+  {name:'Diciembre', year:2025, month:11, colStart:6},
+  {name:'Enero',     year:2026, month:0,  colStart:12},
+  {name:'Febrero',   year:2026, month:1,  colStart:18},
+  {name:'Marzo',     year:2026, month:2,  colStart:24},
+  {name:'Abril',     year:2026, month:3,  colStart:30},
+  {name:'Mayo',      year:2026, month:4,  colStart:36},
+  {name:'Junio',     year:2026, month:5,  colStart:42},
+  {name:'Julio',     year:2026, month:6,  colStart:48},
+  {name:'Agosto',    year:2026, month:7,  colStart:54},
+  {name:'Septiembre',year:2026, month:8,  colStart:60},
+  {name:'Octubre',   year:2026, month:9,  colStart:66},
+];
+
+let seasons = [
+  {id:'nov_may', label:'NOV – MAY (general)',    pp:35, dj:1.7, vs:2.0, minDias:2},
+  {id:'navidad', label:'25 DIC – 6 ENE',          pp:35, dj:7.7, vs:7.7, minDias:3},
+  {id:'s_santa', label:'1 – 6 ABR (S. Santa)',    pp:35, dj:7.7, vs:7.7, minDias:3},
+  {id:'junio',   label:'JUNIO',                   pp:35, dj:1.9, vs:2.0, minDias:2},
+  {id:'jul1',    label:'1 – 15 JUL',              pp:40, dj:1.9, vs:2.0, minDias:7},
+  {id:'jul2',    label:'16 – 31 JUL',             pp:45, dj:2.2, vs:2.4, minDias:7},
+  {id:'ago1',    label:'1 – 7 AGO',               pp:45, dj:2.0, vs:2.0, minDias:7},
+  {id:'ago2',    label:'8 – 15 AGO',              pp:45, dj:2.8, vs:2.8, minDias:7},
+  {id:'ago3',    label:'16 – 25 AGO',             pp:40, dj:2.8, vs:2.8, minDias:7},
+  {id:'ago4',    label:'26 – 31 AGO',             pp:40, dj:2.2, vs:2.2, minDias:6},
+  {id:'sep_oct', label:'SEP – OCT',               pp:35, dj:1.7, vs:2.0, minDias:2},
+];
+
+// Festivos por defecto: Nacionales + Comunitat Valenciana 2025/26
+let holidays = new Set([
+  '2025-11-01',  // Todos los Santos
+  '2025-12-06',  // Constitución
+  '2025-12-08',  // Inmaculada
+  '2025-12-25',  // Navidad
+  '2026-01-01',  // Año Nuevo
+  '2026-01-06',  // Reyes Magos
+  '2026-03-19',  // San José (CV)
+  '2026-04-02',  // Jueves Santo
+  '2026-04-03',  // Viernes Santo
+  '2026-04-06',  // Lunes de Pascua (CV)
+  '2026-05-01',  // Fiesta del Trabajo
+  '2026-06-24',  // San Juan (CV)
+  '2026-08-15',  // Asunción
+  '2026-10-09',  // Día C. Valenciana
+  '2026-10-12',  // Fiesta Nacional
+]);
+
+let festivalDays = new Set();
+
+// Periodos de festivales para marcado rápido
+const FESTIVAL_PRESETS = [
+  {id:'fib',      label:'FIB / SanSan',      dates:['2026-07-09','2026-07-10','2026-07-11','2026-07-12'], loc:'Benicàssim'},
+  {id:'arenal',   label:'Arenal Sound',       dates:['2026-07-30','2026-07-31','2026-08-01','2026-08-02'], loc:'Burriana'},
+  {id:'rototom',  label:'Rototom Sunsplash',  dates:['2026-08-15','2026-08-16','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-21'], loc:'Benicàssim'},
+  {id:'magdalena',label:'Magdalena',          dates:['2026-03-12','2026-03-13','2026-03-14','2026-03-15'], loc:'Castellón'},
+  {id:'regueton', label:'Reguetón Beach',     dates:['2026-07-03','2026-07-04','2026-07-05'], loc:'Oropesa'},
+  {id:'benidorm', label:'Benidorm Fest',      dates:['2026-02-05','2026-02-06','2026-02-07','2026-02-08'], loc:'Benidorm'},
+];
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function getSeason(date) {
+  const m = date.getMonth() + 1, d = date.getDate();
+  if ((m===12&&d>=25)||(m===1&&d<=6)) return seasons.find(s=>s.id==='navidad');
+  if (m===4&&d>=1&&d<=6)              return seasons.find(s=>s.id==='s_santa');
+  if (m===8) {
+    if (d>=26) return seasons.find(s=>s.id==='ago4');
+    if (d>=16) return seasons.find(s=>s.id==='ago3');
+    if (d>=8)  return seasons.find(s=>s.id==='ago2');
+    return seasons.find(s=>s.id==='ago1');
+  }
+  if (m===7) return d<=15 ? seasons.find(s=>s.id==='jul1') : seasons.find(s=>s.id==='jul2');
+  if (m===6) return seasons.find(s=>s.id==='junio');
+  if (m===9||m===10) return seasons.find(s=>s.id==='sep_oct');
+  return seasons.find(s=>s.id==='nov_may');
+}
+
+function getDayLetter(date) {
+  return ['D','L','M','M','J','V','S'][date.getDay()];
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month+1, 0).getDate();
+}
+
+function ds(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function r2(n) { return Math.round(n*100)/100; }
+
+function getParams() {
+  return {
+    nP: parseInt(document.getElementById('numPersonas').value)||6,
+    pF: parseInt(document.getElementById('precioFestivo').value)||45,
+    pFv: parseInt(document.getElementById('precioFestival').value)||35,
+    mF: parseInt(document.getElementById('minDiasFestivo').value)||3,
+    mFv: parseInt(document.getElementById('minDiasFestival').value)||2,
+  };
+}
+
+function calcDay(date, ds_str) {
+  const season = getSeason(date);
+  const letter = getDayLetter(date);
+  const isWe = letter==='V'||letter==='S';
+  const isFe = holidays.has(ds_str);
+  const isFv = festivalDays.has(ds_str);
+  const {nP,pF,pFv,mF,mFv} = getParams();
+  let mult, minD;
+  if (isFe)      { mult = r2((nP*pF)/season.pp);  minD = mF; }
+  else if (isFv) { mult = r2((nP*pFv)/season.pp); minD = mFv; }
+  else           { mult = isWe ? season.vs : season.dj; minD = season.minDias; }
+  return {season, letter, isWe, isFe, isFv, mult, total:r2(season.pp*mult), minD};
+}
+
+// ============================================================
+//  RENDER SEASONS TABLE
+// ============================================================
+function renderSeasons() {
+  const tbody = document.getElementById('seasons-tbody');
+  tbody.innerHTML = '';
+  seasons.forEach((s,i) => {
+    const {nP,pF,pFv} = getParams();
+    const ejDJ = r2(s.pp * s.dj);
+    const ejVS = r2(s.pp * s.vs);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.label}</td>
+      <td><input type="number" value="${s.pp}" step="1" min="1" style="width:80px"
+          onchange="seasons[${i}].pp=parseFloat(this.value)||35; renderSeasons();"></td>
+      <td><input type="number" value="${s.dj}" step="0.1" min="0.1" style="width:65px"
+          onchange="seasons[${i}].dj=parseFloat(this.value)||1; renderSeasons();"></td>
+      <td><input type="number" value="${s.vs}" step="0.1" min="0.1" style="width:65px"
+          onchange="seasons[${i}].vs=parseFloat(this.value)||1; renderSeasons();"></td>
+      <td><input type="number" value="${s.minDias}" step="1" min="1" max="30" style="width:55px"
+          onchange="seasons[${i}].minDias=parseInt(this.value)||1;"></td>
+      <td style="color:#374151;font-weight:600">${ejDJ}€</td>
+      <td style="color:#1d4ed8;font-weight:600">${ejVS}€</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+//  RENDER CALENDAR
+// ============================================================
+function renderCalendar() {
+  const container = document.getElementById('calendar-container');
+  container.innerHTML = '';
+  MONTHS.forEach(({name, year, month}) => {
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = new Date(year, month, 1);
+    const offset = (firstDay.getDay()+6)%7;
+    let fCount = 0, fvCount = 0;
+    for (let d=1;d<=daysInMonth;d++) { const s=ds(year,month,d); if(holidays.has(s))fCount++; if(festivalDays.has(s))fvCount++; }
+
+    const card = document.createElement('div');
+    card.className = 'month-card';
+    card.dataset.month = `${year}-${month}`;
+
+    let cells = '';
+    for (let i=0;i<offset;i++) cells += '<div class="dc empty"></div>';
+    for (let d=1;d<=daysInMonth;d++) {
+      const date = new Date(year, month, d);
+      const dsStr = ds(year,month,d);
+      const dow = date.getDay();
+      const isWe = dow===0||dow===6;
+      const isFe = holidays.has(dsStr);
+      const isFv = festivalDays.has(dsStr);
+      let cls = isFe ? 'fe' : isFv ? 'fv' : isWe ? 'we' : 'wd';
+      cells += `<div class="dc ${cls}" onclick="toggleDay('${dsStr}',this,${year},${month})" title="${dsStr} - ${getDayLetter(date)}">${d}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="month-hdr">${name} ${year}
+        <span class="count">${fCount>0?'🔴×'+fCount+' ':''} ${fvCount>0?'🟣×'+fvCount:''}</span>
+      </div>
+      <div class="cal-inner">
+        <div class="day-hdrs">
+          <div class="day-hdr-cell">L</div><div class="day-hdr-cell">M</div>
+          <div class="day-hdr-cell">M</div><div class="day-hdr-cell">J</div>
+          <div class="day-hdr-cell">V</div><div class="day-hdr-cell">S</div>
+          <div class="day-hdr-cell">D</div>
+        </div>
+        <div class="days-g">${cells}</div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function toggleDay(dsStr, el, year, month) {
+  if (holidays.has(dsStr))       { holidays.delete(dsStr); festivalDays.add(dsStr); }
+  else if (festivalDays.has(dsStr)) { festivalDays.delete(dsStr); }
+  else                            { holidays.add(dsStr); }
+
+  const date = new Date(dsStr);
+  const dow = date.getDay();
+  const isWe = dow===0||dow===6;
+  el.className = 'dc';
+  if (holidays.has(dsStr)) el.classList.add('fe');
+  else if (festivalDays.has(dsStr)) el.classList.add('fv');
+  else if (isWe) el.classList.add('we');
+  else el.classList.add('wd');
+  
+  // Update counter in month header
+  const card = el.closest('.month-card');
+  if (card) {
+    const m = parseInt(card.dataset.month.split('-')[1]);
+    const y = parseInt(card.dataset.month.split('-')[0]);
+    const daysInMonth = getDaysInMonth(y,m);
+    let fCount=0, fvCount=0;
+    for(let d=1;d<=daysInMonth;d++){const s=ds(y,m,d);if(holidays.has(s))fCount++;if(festivalDays.has(s))fvCount++;}
+    const span = card.querySelector('.count');
+    if(span) span.textContent = `${fCount>0?'🔴×'+fCount+' ':''} ${fvCount>0?'🟣×'+fvCount:''}`;
+  }
+}
+
+// ============================================================
+//  FESTIVAL SHORTCUTS
+// ============================================================
+function renderFestivalShortcuts() {
+  const grid = document.getElementById('festival-shortcuts-grid');
+  grid.innerHTML = '';
+  FESTIVAL_PRESETS.forEach(fp => {
+    const allMarked = fp.dates.every(d => festivalDays.has(d));
+    const btn = document.createElement('button');
+    btn.className = 'fshort-btn' + (allMarked ? ' active-f' : '');
+    btn.innerHTML = `<strong>${allMarked ? '✓ ' : ''}${fp.label}</strong><span>${fp.loc} · ${fp.dates.length} días</span>`;
+    btn.onclick = () => {
+      const toMark = fp.dates.every(d=>festivalDays.has(d));
+      fp.dates.forEach(d => {
+        if (toMark) festivalDays.delete(d);
+        else { holidays.delete(d); festivalDays.add(d); }
+      });
+      renderFestivalShortcuts();
+      renderCalendar();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ============================================================
+//  PREVIEW
+// ============================================================
+function renderPreview() {
+  const container = document.getElementById('preview-container');
+  container.innerHTML = '';
+  MONTHS.forEach(({name, year, month}) => {
+    const daysInMonth = getDaysInMonth(year, month);
+    let rows = '';
+    for (let d=1;d<=daysInMonth;d++) {
+      const date = new Date(year, month, d);
+      const dsStr = ds(year, month, d);
+      const {letter, isFe, isFv, isWe, mult, total, minD, season} = calcDay(date, dsStr);
+      let rowCls = isFe ? 'is-festivo' : isFv ? 'is-festival' : isWe ? 'is-we' : '';
+      let tag = isFe ? '🔴 Festivo' : isFv ? '🟣 Festival' : '';
+      rows += `<tr>
+        <td class="day-num">${d}</td>
+        <td class="day-let ${rowCls}">${letter}</td>
+        <td>${season.pp}€</td>
+        <td class="${rowCls}" style="font-weight:700">×${mult}</td>
+        <td class="${rowCls}" style="font-weight:700">${total}€</td>
+        <td>${minD}</td>
+        <td style="font-size:11px;color:#888">${tag}</td>
+      </tr>`;
+    }
+    const div = document.createElement('div');
+    div.className = 'preview-month';
+    div.innerHTML = `
+      <div class="preview-month-hdr">${name} ${year}</div>
+      <table class="ptbl">
+        <thead><tr><th>Día</th><th>D.Sem</th><th>PP</th><th>×Factor</th><th>Precio</th><th>Mín.Noches</th><th>Tipo</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    container.appendChild(div);
+  });
+}
+
+// ============================================================
+//  EXCEL GENERATION
+// ============================================================
+function generateExcel() {
+  if (typeof XLSX === 'undefined') { showToast('❌ SheetJS no cargado. Intenta de nuevo.'); return; }
+
+  const {nP,pF,pFv,mF,mFv} = getParams();
+  const wb = XLSX.utils.book_new();
+  const ws = {};
+
+  function sc(r, c, v, t) {
+    ws[XLSX.utils.encode_cell({r,c})] = {v, t: t||'n'};
+  }
+
+  // Row 1: Month headers
+  MONTHS.forEach(({name, colStart}) => sc(0, colStart, name, 's'));
+
+  // Reference values (Excel T35, T36, T39)
+  sc(34, 19, nP);   // T35 = num personas
+  sc(35, 19, pF);   // T36 = precio festivo
+  sc(38, 19, pFv);  // T39 = precio festival
+
+  // Lookup table headers (row 44 = index 43)
+  sc(43, 8,  'MESES TEMPORADA', 's');
+  sc(43, 17, 'P.P', 's');
+  sc(43, 20, 'FACTOR SEMANA D-J', 's');
+  sc(43, 27, 'FACTOR FIN DE SEMANA V-S', 's');
+  sc(43, 36, 'FESTIVOS', 's');
+  sc(43, 43, 'FESTIVALES', 's');
+  sc(43, 46, 'DIAS MINIMOS', 's');
+
+  // Season rows (Excel 45-55 = index 44-54)
+  const seasonRows = { nov_may:44, s_santa:45, junio:46, jul1:47, jul2:48, ago1:49, ago2:50, ago3:51, ago4:52, sep_oct:53, navidad:54 };
+  seasons.forEach(s => {
+    const r = seasonRows[s.id]; if(r===undefined) return;
+    sc(r, 8,  s.label, 's');
+    sc(r, 17, s.pp);
+    sc(r, 20, s.dj);
+    sc(r, 27, s.vs);
+    sc(r, 36, r2((nP*pF)/s.pp));
+    sc(r, 43, r2((nP*pFv)/s.pp));
+    sc(r, 46, s.minDias);
+  });
+
+  // Monthly data
+  MONTHS.forEach(({name, year, month, colStart}) => {
+    const daysInMonth = getDaysInMonth(year, month);
+    for (let d=1; d<=daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dsStr = ds(year, month, d);
+      const row = d; // row index 1 = Excel row 2
+
+      const {letter, isFe, isFv, mult, total, minD, season} = calcDay(date, dsStr);
+
+      sc(row, colStart,   d,         'n');
+      sc(row, colStart+1, letter,    's');
+      sc(row, colStart+2, season.pp, 'n');
+      sc(row, colStart+3, mult,      'n');
+      sc(row, colStart+4, total,     'n');
+      sc(row, colStart+5, minD,      'n');
+    }
+  });
+
+  // Sheet range
+  ws['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:54,c:71}});
+
+  // Column widths (6-col pattern: dayNum, dayLet, PP, mult, total, minDays)
+  const cols = [];
+  for (let i=0; i<=71; i++) {
+    const pos = i%6;
+    cols.push({wpx: pos===0?28 : pos===1?22 : pos===5?50 : 60});
+  }
+  ws['!cols'] = cols;
+
+  XLSX.utils.book_append_sheet(wb, ws, '2025');
+
+  const yr = document.getElementById('yearStart').value||'2025';
+  const fn = `tar_prop_${yr}11-${parseInt(yr)+1}10.xlsx`;
+  XLSX.writeFile(wb, fn);
+  showToast(`✅ Excel "${fn}" descargado`);
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+function showTab(tabName, event) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tabName).classList.add('active');
+  if (event) event.target.classList.add('active');
+  if (tabName==='preview') renderPreview();
+}
+
+// ============================================================
+//  MODAL IMPORT/EXPORT
+// ============================================================
+function openModal() {
+  const ta = document.getElementById('modal-textarea');
+  let lines = [...holidays].sort().map(d => d);
+  lines = lines.concat([...festivalDays].sort().map(d => d+'*'));
+  ta.value = lines.join('\n');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function exportHolidays() {
+  const ta = document.getElementById('modal-textarea');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    showToast('📋 Festivos copiados al portapapeles');
+    closeModal();
+  }).catch(() => showToast('Selecciona y copia el texto manualmente'));
+}
+function importHolidays() {
+  const ta = document.getElementById('modal-textarea');
+  const lines = ta.value.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+  holidays.clear(); festivalDays.clear();
+  lines.forEach(l => {
+    if (l.endsWith('*')) festivalDays.add(l.slice(0,-1));
+    else holidays.add(l);
+  });
+  renderCalendar();
+  renderFestivalShortcuts();
+  showToast('✅ Festivos importados correctamente');
+  closeModal();
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+renderSeasons();
+renderCalendar();
+renderFestivalShortcuts();
+</script>
+</body>
+</html>
